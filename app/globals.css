@@ -27,6 +27,14 @@ body {
 
 html.classic-page {
   scroll-behavior: smooth;
+  background-color: #f7f9fc;
+  overscroll-behavior-y: none;
+}
+
+html.classic-page body {
+  min-height: 100%;
+  background-color: #f7f9fc;
+  overscroll-behavior-y: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

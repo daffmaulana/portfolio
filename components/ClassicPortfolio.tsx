@@ -119,6 +119,31 @@ function ClipboardIcon() {
   );
 }
 
+function stopOutsideImageClick(event: MouseEvent<HTMLImageElement>) {
+  const image = event.currentTarget;
+  const bounds = image.getBoundingClientRect();
+  if (!image.naturalWidth || !image.naturalHeight) {
+    return;
+  }
+
+  const scale = Math.min(
+    bounds.width / image.naturalWidth,
+    bounds.height / image.naturalHeight,
+  );
+  const imageWidth = image.naturalWidth * scale;
+  const imageHeight = image.naturalHeight * scale;
+  const imageLeft = bounds.left + (bounds.width - imageWidth) / 2;
+  const imageTop = bounds.top + (bounds.height - imageHeight) / 2;
+  if (
+    event.clientX >= imageLeft &&
+    event.clientX <= imageLeft + imageWidth &&
+    event.clientY >= imageTop &&
+    event.clientY <= imageTop + imageHeight
+  ) {
+    event.stopPropagation();
+  }
+}
+
 function PhotoLightbox({
   photos,
   index,
@@ -131,9 +156,12 @@ function PhotoLightbox({
   onNavigate: (index: number) => void;
 }) {
   const photo = photos[index];
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!photo) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
       if (event.key === "ArrowLeft") {
@@ -146,7 +174,10 @@ function PhotoLightbox({
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [index, onClose, onNavigate, photo, photos.length]);
 
   if (!photo) return null;
@@ -156,14 +187,17 @@ function PhotoLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={photo.caption ?? photo.alt}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm"
       onClick={onClose}
     >
       <button
         type="button"
         aria-label="Close image preview"
-        className="absolute right-4 top-4 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/20"
-        onClick={onClose}
+        className="absolute right-3 top-3 z-30 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/20 bg-slate-900/80 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/20 sm:right-5 sm:top-5"
+        onClick={(event) => {
+          event.stopPropagation();
+          onClose();
+        }}
       >
         Close <span aria-hidden="true">×</span>
       </button>
@@ -176,7 +210,7 @@ function PhotoLightbox({
               event.stopPropagation();
               onNavigate((index - 1 + photos.length) % photos.length);
             }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-white/10 p-3 text-white transition hover:bg-white/20"
+            className="absolute left-2 top-1/2 z-20 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-slate-900/80 p-3 text-white transition hover:bg-white/20 sm:left-5"
           >
             <span aria-hidden="true">←</span>
           </button>
@@ -187,26 +221,41 @@ function PhotoLightbox({
               event.stopPropagation();
               onNavigate((index + 1) % photos.length);
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-white/10 p-3 text-white transition hover:bg-white/20"
+            className="absolute right-2 top-1/2 z-20 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-slate-900/80 p-3 text-white transition hover:bg-white/20 sm:right-5"
           >
             <span aria-hidden="true">→</span>
           </button>
-          <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-white/70">
-            {index + 1} / {photos.length}
-          </span>
         </>
       )}
       <figure
-        className="flex max-h-full max-w-6xl flex-col items-center"
-        onClick={(event) => event.stopPropagation()}
+        className="absolute inset-x-14 bottom-24 top-16 z-0 flex flex-col items-center touch-pan-y sm:inset-x-20"
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          touchStart.current = touch
+            ? { x: touch.clientX, y: touch.clientY }
+            : null;
+        }}
+        onTouchEnd={(event) => {
+          const start = touchStart.current;
+          const touch = event.changedTouches[0];
+          touchStart.current = null;
+          if (!start || !touch || photos.length < 2) return;
+          const deltaX = touch.clientX - start.x;
+          const deltaY = touch.clientY - start.y;
+          if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY)) {
+            return;
+          }
+          onNavigate((index + (deltaX < 0 ? 1 : -1) + photos.length) % photos.length);
+        }}
       >
-        <div className="relative h-[75vh] w-[90vw] max-w-6xl">
+        <div className="relative min-h-0 w-full flex-1">
           <Image
             src={photo.full ?? photo.src}
             alt={photo.alt}
             fill
-            sizes="90vw"
+            sizes="(max-width: 640px) 72vw, 80vw"
             className="object-contain"
+            onClick={stopOutsideImageClick}
           />
         </div>
         {(photo.caption || photo.alt) && (
@@ -215,6 +264,41 @@ function PhotoLightbox({
           </figcaption>
         )}
       </figure>
+      {photos.length > 1 && (
+        <div
+          aria-label="Photo previews"
+          className="absolute bottom-1 left-1/2 z-20 flex max-w-[88vw] -translate-x-1/2 gap-2 overflow-x-auto px-1 pb-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {photos.map((preview, previewIndex) => (
+            <button
+              key={preview.src}
+              type="button"
+              aria-label={`View photo ${previewIndex + 1}: ${preview.alt}`}
+              aria-pressed={previewIndex === index}
+              onClick={() => onNavigate(previewIndex)}
+              className={`shrink-0 overflow-hidden rounded-md border-2 ${
+                previewIndex === index
+                  ? "border-cyan-300"
+                  : "border-white/20 opacity-65"
+              }`}
+            >
+              <Image
+                src={preview.src}
+                alt=""
+                width={80}
+                height={56}
+                className="h-12 w-16 object-cover sm:h-14 sm:w-20"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+      {photos.length > 1 && (
+        <span className="absolute bottom-[4.5rem] left-1/2 z-10 -translate-x-1/2 text-xs text-white/70">
+          {index + 1} / {photos.length}
+        </span>
+      )}
     </div>
   );
 }
@@ -290,6 +374,7 @@ export default function ClassicPortfolio() {
   const [modalTarget, setModalTarget] = useState<string | null>(null);
   const [gameWarningOpen, setGameWarningOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lightbox, setLightbox] = useState<{
     photos: PhotoData[];
     index: number;
@@ -438,7 +523,7 @@ export default function ClassicPortfolio() {
       >
         <nav
           aria-label="Main navigation"
-          className="mx-auto flex max-w-7xl items-center gap-8 px-5 py-3 sm:px-8"
+          className="mx-auto flex max-w-7xl items-center gap-2 px-5 py-3 sm:gap-4 sm:px-8 lg:gap-8"
         >
           <a
             href="#home"
@@ -455,13 +540,31 @@ export default function ClassicPortfolio() {
               className="h-[38px] w-[38px] object-contain"
             />
           </a>
-          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs font-medium text-slate-600 sm:gap-3 sm:text-sm">
+          <div
+            aria-label={`${profile.name}, open to work`}
+            className="flex min-w-0 flex-1 flex-col leading-tight lg:hidden"
+          >
+            <span className="hidden truncate text-xs font-semibold tracking-tight text-slate-950 min-[380px]:block">
+              Daffa Bagus Maulana
+            </span>
+            <span className="truncate text-xs font-semibold tracking-tight text-slate-950 min-[380px]:hidden">
+              Daffa
+            </span>
+            <span className="mt-1 inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+              />
+              Open to work
+            </span>
+          </div>
+          <div className="hidden min-w-0 flex-1 items-center justify-center gap-1 text-xs font-medium text-slate-600 lg:flex xl:gap-3 xl:text-sm">
             {navigation.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
                 onClick={(event) => scrollToSection(event, item.href)}
-                className="shrink-0 rounded-lg px-3 py-2 transition hover:bg-slate-100 hover:text-slate-950"
+                className="shrink-0 rounded-lg px-2 py-2 transition hover:bg-slate-100 hover:text-slate-950 xl:px-3"
               >
                 {item.label}
               </a>
@@ -472,19 +575,59 @@ export default function ClassicPortfolio() {
               type="button"
               onClick={openGamePage}
               aria-haspopup="dialog"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-cyan-600 hover:text-cyan-800 sm:text-sm"
+              className="hidden items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-cyan-600 hover:text-cyan-800 lg:inline-flex xl:text-sm"
             >
               <GamepadIcon />
               Play as a Game
             </button>
             <a
               href={contact.cvUrl}
-              className="hidden shrink-0 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-cyan-800 sm:inline-flex"
+              download
+              className="inline-flex shrink-0 rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-cyan-800 sm:px-4 sm:text-sm"
             >
               Download CV
             </a>
+            <button
+              type="button"
+              aria-label={
+                mobileMenuOpen
+                  ? "Close navigation menu"
+                  : "Open navigation menu"
+              }
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:border-cyan-600 hover:text-cyan-800 lg:hidden"
+            >
+              <span aria-hidden="true" className="text-xl leading-none">
+                {mobileMenuOpen ? "×" : "☰"}
+              </span>
+            </button>
           </div>
         </nav>
+        {mobileMenuOpen && (
+          <nav
+            id="mobile-navigation"
+            aria-label="Mobile navigation"
+            className="border-t border-slate-200 bg-white px-5 py-3 lg:hidden sm:px-8"
+          >
+            <div className="mx-auto grid max-w-7xl grid-cols-2 gap-1">
+              {navigation.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={(event) => {
+                    setMobileMenuOpen(false);
+                    scrollToSection(event, item.href);
+                  }}
+                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+        )}
       </header>
 
       <section
@@ -493,19 +636,33 @@ export default function ClassicPortfolio() {
       >
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_78%_22%,rgba(103,232,249,0.18),transparent_28%),linear-gradient(115deg,#f8fafc_0%,#eef5fb_54%,#f8fafc_100%)]" />
         <div className="mx-auto max-w-7xl px-5 pb-12 pt-14 sm:px-8 sm:pb-16 sm:pt-20 lg:pb-14 lg:pt-24">
-          <div className="grid items-center gap-12 lg:grid-cols-[1fr_0.72fr] lg:gap-16">
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_0.72fr] lg:gap-16">
             <div className="max-w-3xl">
               <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 Open to Work Opportunities
               </p>
-              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-800">
-                Hello, It&apos;s me
-              </p>
-              <h1 className="mt-3 max-w-3xl text-5xl font-semibold tracking-[-0.055em] text-slate-950 sm:text-6xl lg:text-[4.5rem] lg:leading-[1.02]">
-                {profile.name}
-                <span className="text-cyan-600">.</span>
-              </h1>
+              <div className="mt-6 grid grid-cols-[minmax(0,1fr)_clamp(5.25rem,22vw,8rem)] items-center gap-3 sm:mt-8 sm:grid-cols-[minmax(0,1fr)_clamp(7rem,20vw,9rem)] lg:block">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-800 sm:text-xs sm:tracking-[0.2em]">
+                    Hello, It&apos;s me
+                  </p>
+                  <h1 className="mt-2 text-[clamp(1.75rem,8vw,3.75rem)] font-semibold leading-[1.03] tracking-[-0.055em] text-slate-950 sm:mt-3 sm:text-6xl lg:max-w-3xl lg:text-[4.5rem] lg:leading-[1.02]">
+                    {profile.name}
+                    <span className="text-cyan-600">.</span>
+                  </h1>
+                </div>
+                <div className="relative aspect-[0.88] w-full overflow-hidden rounded-2xl border-2 border-white bg-slate-100 shadow-lg shadow-slate-900/10 lg:hidden">
+                  <Image
+                    src={about.portrait.src}
+                    alt={about.portrait.alt}
+                    fill
+                    priority
+                    sizes="(max-width: 640px) 22vw, 144px"
+                    className="object-cover object-[center_30%]"
+                  />
+                </div>
+              </div>
               <p className="mt-5 text-lg font-medium text-slate-700 sm:text-xl">
                 {profile.role}
               </p>
@@ -524,8 +681,7 @@ export default function ClassicPortfolio() {
                 </a>
                 <a
                   href={contact.cvUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                  download
                   className="rounded-full border border-slate-300 bg-white/80 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-500 hover:bg-white"
                 >
                   Download CV
@@ -540,7 +696,7 @@ export default function ClassicPortfolio() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[330px] lg:mr-8">
+            <div className="relative mx-auto hidden w-full max-w-[300px] lg:mr-8 lg:block">
               <div className="absolute -right-10 top-8 h-40 w-40 rounded-full bg-cyan-200/60 blur-3xl" />
               <div className="relative rounded-[1.75rem] border border-white bg-white/75 p-2 shadow-xl shadow-slate-900/10">
                 <div className="relative aspect-[0.88] overflow-hidden rounded-[1.3rem] bg-slate-100">
@@ -558,7 +714,7 @@ export default function ClassicPortfolio() {
           </div>
 
           <div className="mt-12 grid max-w-7xl grid-cols-2 gap-x-4 gap-y-6 border-y border-slate-200/80 py-6 sm:grid-cols-3 lg:grid-cols-5 lg:gap-0">
-            <div className="border-l border-slate-200 px-3 first:border-l-0 first:pl-0 sm:px-5">
+            <div className="border-l border-slate-200 px-3 first:border-l-0 sm:px-5">
               <p className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
                 2+ years
               </p>
@@ -720,7 +876,7 @@ export default function ClassicPortfolio() {
               </p>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {aiesec.stats.map((stat) => (
               <div
                 key={stat.label}
@@ -893,7 +1049,7 @@ export default function ClassicPortfolio() {
             title="Selected projects."
             description="A selection of applications, data work, and machine learning projects."
           />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             {projects.map((project, index) => {
               const thumbnail = project.photos?.[0];
               return (
@@ -922,19 +1078,19 @@ export default function ClassicPortfolio() {
                       </span>
                     )}
                   </div>
-                  <span className="flex flex-1 flex-col p-5">
-                    <span className="text-xl font-semibold tracking-tight text-slate-950">
+                  <span className="flex flex-1 flex-col p-3 sm:p-5">
+                    <span className="text-base font-semibold tracking-tight text-slate-950 sm:text-xl">
                       {project.title}
                     </span>
-                    <span className="mt-2 text-sm leading-6 text-slate-600">
+                    <span className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600 sm:line-clamp-none sm:text-sm sm:leading-6">
                       {project.tagline}
                     </span>
                     {project.tags && (
-                      <span className="mt-3 flex flex-wrap gap-1.5">
+                      <span className="mt-3 flex max-h-6 flex-wrap gap-1.5 overflow-hidden sm:max-h-none">
                         {project.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-medium capitalize text-cyan-900"
+                            className="rounded-full bg-cyan-50 px-2 py-1 text-[10px] font-medium capitalize text-cyan-900 sm:px-2.5 sm:text-xs"
                           >
                             {tag === "ml" ? "Machine Learning" : tag}
                           </span>
@@ -942,20 +1098,30 @@ export default function ClassicPortfolio() {
                       </span>
                     )}
                     <span className="mt-auto flex flex-wrap gap-1.5 pt-4">
-                      {project.stack.slice(0, 4).map((technology) => (
-                        <ClassicToolBadge
-                          key={technology}
-                          tool={technology}
-                          compact
-                        />
-                      ))}
+                      {project.stack
+                        .slice(0, 4)
+                        .map((technology, badgeIndex) => (
+                          <span
+                            key={technology}
+                            className={
+                              badgeIndex > 1 ? "hidden sm:inline-flex" : ""
+                            }
+                          >
+                            <ClassicToolBadge tool={technology} compact />
+                          </span>
+                        ))}
+                      {project.stack.length > 2 && (
+                        <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500 sm:hidden">
+                          +{project.stack.length - 2}
+                        </span>
+                      )}
                       {project.stack.length > 4 && (
-                        <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">
+                        <span className="hidden rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500 sm:inline-flex">
                           +{project.stack.length - 4}
                         </span>
                       )}
                     </span>
-                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-800">
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-800 sm:mt-5 sm:gap-2 sm:text-sm">
                       View project <ArrowIcon />
                     </span>
                   </span>
@@ -980,41 +1146,41 @@ export default function ClassicPortfolio() {
             {certifications.map((certification) => (
               <article
                 key={certification.id}
-                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-cyan-700">
-                      {certification.issuer}
-                    </p>
-                    <h3 className="mt-2 text-lg font-semibold text-slate-950">
-                      {certification.title}
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-500">
-                      Issued {certification.issued}
-                      {certification.expires &&
-                        ` · Expires ${certification.expires}`}
-                    </p>
-                    <dl className="mt-2 grid gap-y-1 text-sm text-slate-600">
-                      <div>
-                        <dt className="inline font-medium text-slate-800">
-                          When:{" "}
-                        </dt>
-                        <dd className="inline">
-                          {certification.activityDate ?? certification.issued}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline font-medium text-slate-800">
-                          Where:{" "}
-                        </dt>
-                        <dd className="inline">
-                          {certification.location ?? "Not specified"}
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-cyan-700">
+                    {certification.issuer}
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold text-slate-950">
+                    {certification.title}
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Issued {certification.issued}
+                    {certification.expires &&
+                      ` · Expires ${certification.expires}`}
+                  </p>
+                  <dl className="mt-2 grid gap-y-1 text-sm text-slate-600">
+                    <div>
+                      <dt className="inline font-medium text-slate-800">
+                        When:{" "}
+                      </dt>
+                      <dd className="inline">
+                        {certification.activityDate ?? certification.issued}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-medium text-slate-800">
+                        Where:{" "}
+                      </dt>
+                      <dd className="inline">
+                        {certification.location ?? "Not specified"}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                {(certification.url || certification.relatedProjectId) && (
+                  <div className="mt-4 flex flex-col items-start gap-2 border-t border-slate-100 pt-4">
                     {certification.url && (
                       <a
                         href={certification.url}
@@ -1041,9 +1207,9 @@ export default function ClassicPortfolio() {
                       </button>
                     )}
                   </div>
-                </div>
+                )}
                 {certification.photos && (
-                  <div className="mt-5 grid grid-cols-3 gap-3">
+                  <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
                     {certification.photos.map((photo, index) => (
                       <PhotoTile
                         key={photo.src}
@@ -1279,8 +1445,7 @@ export default function ClassicPortfolio() {
                 </button>
                 <a
                   href={contact.cvUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                  download
                   className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-800"
                 >
                   Download CV

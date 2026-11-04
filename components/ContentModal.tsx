@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import type { IconifyIcon } from "@iconify/types";
@@ -279,6 +279,7 @@ function ContactContent({ onClose }: { onClose: () => void }) {
         </div>
         <a
           href={contact.cvUrl}
+          download
           className="inline-flex items-center gap-2 rounded bg-amber-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600"
         >
           <svg
@@ -454,12 +455,15 @@ function Lightbox({
   onClose: () => void;
 }) {
   const photo = photos[index];
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const go = (d: number) =>
     onChange((index + d + photos.length) % photos.length);
 
   // Capture phase: Esc dan panah ditangani di sini dan tidak diteruskan
   // ke kartu di belakangnya, jadi Esc hanya menutup foto
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
@@ -473,18 +477,26 @@ function Lightbox({
       }
     };
     window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey, true);
+    };
   }, [index, photos.length, onChange, onClose]);
 
   return createPortal(
     <div
-      className="fixed inset-0 z-30 flex items-center justify-center bg-black/90 p-4"
+      className="fixed inset-0 z-30 bg-black/95"
       onClick={onClose}
       onContextMenu={(e) => e.preventDefault()}
     >
       <button
-        onClick={onClose}
-        className="absolute right-4 top-4 rounded-full bg-white/15 px-4 py-1.5 text-sm text-white hover:bg-white/30"
+        type="button"
+        aria-label="Close image preview"
+        onClick={(event) => {
+          event.stopPropagation();
+          onClose();
+        }}
+        className="absolute right-3 top-3 z-30 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-slate-900/80 px-4 py-1.5 text-sm text-white hover:bg-white/30 sm:right-5 sm:top-5"
       >
         Close (Esc)
       </button>
@@ -497,7 +509,7 @@ function Lightbox({
               e.stopPropagation();
               go(-1);
             }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/15 px-4 py-3 text-2xl text-white hover:bg-white/30"
+            className="absolute left-2 top-1/2 z-20 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-slate-900/80 px-3 py-3 text-2xl text-white hover:bg-white/30 sm:left-5"
           >
             ‹
           </button>
@@ -507,7 +519,7 @@ function Lightbox({
               e.stopPropagation();
               go(1);
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/15 px-4 py-3 text-2xl text-white hover:bg-white/30"
+            className="absolute right-2 top-1/2 z-20 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-slate-900/80 px-3 py-3 text-2xl text-white hover:bg-white/30 sm:right-5"
           >
             ›
           </button>
@@ -515,15 +527,33 @@ function Lightbox({
       )}
 
       <figure
-        className="absolute inset-x-12 bottom-24 top-4 flex flex-col items-center justify-center"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute inset-x-14 bottom-24 top-16 z-0 flex flex-col items-center justify-center touch-pan-y sm:inset-x-20"
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          touchStart.current = touch
+            ? { x: touch.clientX, y: touch.clientY }
+            : null;
+        }}
+        onTouchEnd={(event) => {
+          const start = touchStart.current;
+          const touch = event.changedTouches[0];
+          touchStart.current = null;
+          if (!start || !touch || photos.length < 2) return;
+          const deltaX = touch.clientX - start.x;
+          const deltaY = touch.clientY - start.y;
+          if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY)) {
+            return;
+          }
+          go(deltaX < 0 ? 1 : -1);
+        }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={photo.full ?? photo.src}
           alt={photo.alt}
           draggable={false}
-          className="pointer-events-none max-h-[calc(100vh-12rem)] max-w-full select-none rounded-lg object-contain"
+          className="max-h-[calc(100dvh-13rem)] max-w-full select-none rounded-lg object-contain"
+          onClick={(event) => event.stopPropagation()}
         />
         <figcaption className="mt-3 text-center text-sm text-white/80">
           {photo.caption ?? photo.alt}
@@ -537,7 +567,7 @@ function Lightbox({
       </figure>
       {photos.length > 1 && (
         <div
-          className="absolute bottom-4 left-1/2 flex max-w-[88vw] -translate-x-1/2 gap-2 overflow-x-auto px-1 pb-2"
+          className="absolute bottom-3 left-1/2 z-20 flex max-w-[88vw] -translate-x-1/2 gap-2 overflow-x-auto rounded-lg bg-black/40 px-1 pb-2 pt-1"
           aria-label="Photo previews"
           onClick={(e) => e.stopPropagation()}
         >
@@ -1154,13 +1184,30 @@ function ExperienceContent({ id }: { id: string }) {
 
   return (
     <>
-      <h2 className="text-2xl font-bold leading-snug">{experience.role}</h2>
-      <p className="mt-1 text-sm text-neutral-500">{experience.org}</p>
-      {experience.industry && (
-        <p className="mt-1 text-sm text-neutral-600">
-          Industry: {experience.industry}
-        </p>
-      )}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-neutral-600">
+            {experience.org}
+          </p>
+          {experience.industry && (
+            <p className="mt-1 text-sm text-neutral-500">
+              Industry: {experience.industry}
+            </p>
+          )}
+          <h2 className="mt-1 text-2xl font-bold leading-snug">
+            {experience.role}
+          </h2>
+        </div>
+        {experience.companyLogo && (
+          <Image
+            src={experience.companyLogo.src}
+            alt={experience.companyLogo.alt}
+            width={180}
+            height={64}
+            className="h-10 w-auto max-w-24 shrink-0 object-contain object-right"
+          />
+        )}
+      </div>
       <p className="mt-1 text-xs text-neutral-500">
         {experience.start} – {experience.end}
       </p>
@@ -1386,7 +1433,7 @@ function ProjectContent({ index }: { index: number }) {
             <div className="bg-white rounded">
               {/* // eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logos/9am.svg"
+                src="/logos/9AM.svg"
                 alt=""
                 aria-hidden="true"
                 className="p-0.5 h-5 w-5 rounded-sm object-contain"

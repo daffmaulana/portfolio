@@ -2,7 +2,23 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+
+const DESKTOP_QUERY = "(min-width: 1024px) and (pointer: fine)";
+
+function subscribeToDesktop(callback: () => void) {
+  const mediaQuery = window.matchMedia(DESKTOP_QUERY);
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getDesktopSnapshot() {
+  return window.matchMedia(DESKTOP_QUERY).matches;
+}
+
+function getServerDesktopSnapshot() {
+  return false;
+}
 
 const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ssr: false,
@@ -15,18 +31,16 @@ const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
 
 export default function Home() {
   const router = useRouter();
-  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+  const isDesktop = useSyncExternalStore(
+    subscribeToDesktop,
+    getDesktopSnapshot,
+    getServerDesktopSnapshot,
+  );
 
   useEffect(() => {
-    // Desktop = wide screen AND a mouse (not touch-only)
-    const desktop = window.matchMedia(
-      "(min-width: 1024px) and (pointer: fine)"
-    ).matches;
-    setIsDesktop(desktop);
-    if (!desktop) router.replace("/classic");
-  }, [router]);
+    if (!isDesktop) router.replace("/classic");
+  }, [isDesktop, router]);
 
-  // Black screen for a split second while we check
   if (!isDesktop) return <div className="h-screen w-screen bg-black" />;
 
   return <GameCanvas />;
