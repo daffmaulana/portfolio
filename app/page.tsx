@@ -38,7 +38,9 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (!isDesktop) router.replace("/classic");
+    if (!window.matchMedia(DESKTOP_QUERY).matches) {
+      router.replace("/classic");
+    }
   }, [isDesktop, router]);
 
   if (!isDesktop) return <div className="h-screen w-screen bg-black" />;

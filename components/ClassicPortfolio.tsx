@@ -523,70 +523,53 @@ export default function ClassicPortfolio() {
       >
         <nav
           aria-label="Main navigation"
-          className="mx-auto flex max-w-7xl items-center gap-2 px-5 py-3 sm:gap-4 sm:px-8 lg:gap-8"
+          className="mx-auto flex max-w-7xl items-center gap-1 px-2 py-3 sm:gap-2 sm:px-3 md:gap-1 md:px-2 min-[900px]:gap-2 min-[900px]:px-4 xl:gap-6 xl:px-8"
         >
-          <a
-            href="#home"
-            onClick={(event) => scrollToSection(event, "#home")}
-            aria-label={`${profile.name} — Home`}
-            className="shrink-0 rounded-xl transition hover:opacity-75"
-          >
-            <Image
-              src="/logos/portofolio.ico"
-              width={38}
-              height={38}
-              unoptimized
-              alt=""
-              className="h-[38px] w-[38px] object-contain"
-            />
-          </a>
           <div
             aria-label={`${profile.name}, open to work`}
-            className="flex min-w-0 flex-1 flex-col leading-tight lg:hidden"
+            className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2"
           >
-            <span className="hidden truncate text-xs font-semibold tracking-tight text-slate-950 min-[380px]:block">
-              Daffa Bagus Maulana
-            </span>
-            <span className="truncate text-xs font-semibold tracking-tight text-slate-950 min-[380px]:hidden">
-              Daffa
-            </span>
-            <span className="mt-1 inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+            <a
+              href="#home"
+              onClick={(event) => scrollToSection(event, "#home")}
+              aria-label={`${profile.name} — Home`}
+              className="shrink-0 rounded-xl transition hover:opacity-75"
+            >
+              <Image
+                src="/logos/portofolio.ico"
+                width={38}
+                height={38}
+                unoptimized
+                alt=""
+                className="h-[34px] w-[34px] object-contain sm:h-[38px] sm:w-[38px]"
               />
-              Open to work
+            </a>
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-[10px] font-semibold tracking-tight text-slate-950 sm:text-xs">
+                Daffa Bagus Maulana
+              </span>
+              <span className="mt-1 inline-flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[0.08em] text-emerald-700 sm:gap-1.5 sm:text-[9px] sm:tracking-[0.12em]">
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+                />
+                Open to work
+              </span>
             </span>
           </div>
-          <div className="hidden min-w-0 flex-1 items-center justify-center gap-1 text-xs font-medium text-slate-600 lg:flex xl:gap-3 xl:text-sm">
+          <div className="hidden min-w-0 flex-1 items-center justify-center gap-3 text-[9px] font-medium text-slate-600 md:flex min-[900px]:gap-3 min-[900px]:text-xs xl:gap-3 xl:text-sm">
             {navigation.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
                 onClick={(event) => scrollToSection(event, item.href)}
-                className="shrink-0 rounded-lg px-2 py-2 transition hover:bg-slate-100 hover:text-slate-950 xl:px-3"
+                className="shrink-0 rounded-lg px-0.5 py-2 transition hover:bg-slate-100 hover:text-slate-950 min-[900px]:px-1 xl:px-3"
               >
                 {item.label}
               </a>
             ))}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={openGamePage}
-              aria-haspopup="dialog"
-              className="hidden items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-cyan-600 hover:text-cyan-800 lg:inline-flex xl:text-sm"
-            >
-              <GamepadIcon />
-              Play as a Game
-            </button>
-            <a
-              href={contact.cvUrl}
-              download
-              className="inline-flex shrink-0 rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-cyan-800 sm:px-4 sm:text-sm"
-            >
-              Download CV
-            </a>
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:ml-0 md:gap-1 min-[900px]:gap-2">
             <button
               type="button"
               aria-label={
@@ -597,19 +580,35 @@ export default function ClassicPortfolio() {
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-navigation"
               onClick={() => setMobileMenuOpen((open) => !open)}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:border-cyan-600 hover:text-cyan-800 lg:hidden"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:border-cyan-600 hover:text-cyan-800 md:hidden sm:h-11 sm:w-11"
             >
               <span aria-hidden="true" className="text-xl leading-none">
                 {mobileMenuOpen ? "×" : "☰"}
               </span>
             </button>
+            <button
+              type="button"
+              onClick={openGamePage}
+              aria-haspopup="dialog"
+              className="hidden items-center gap-1 rounded-lg border border-slate-300 bg-white px-1.5 py-2 text-[10px] font-semibold text-slate-700 transition hover:border-cyan-600 hover:text-cyan-800 min-[400px]:inline-flex min-[900px]:gap-1.5 min-[900px]:px-2.5 min-[900px]:py-2.5 min-[900px]:text-xs xl:gap-2 xl:px-3.5 xl:text-sm"
+            >
+              <GamepadIcon />
+              Play as a Game
+            </button>
+            <a
+              href={contact.cvUrl}
+              download
+              className="inline-flex shrink-0 rounded-lg bg-slate-900 px-2 py-2.5 text-[10px] font-semibold text-white transition hover:bg-cyan-800 sm:px-3 sm:text-xs md:px-1.5 md:py-2 md:text-[10px] min-[900px]:px-2.5 min-[900px]:py-2.5 min-[900px]:text-xs xl:px-4 xl:text-sm"
+            >
+              Download CV
+            </a>
           </div>
         </nav>
         {mobileMenuOpen && (
           <nav
             id="mobile-navigation"
             aria-label="Mobile navigation"
-            className="border-t border-slate-200 bg-white px-5 py-3 lg:hidden sm:px-8"
+            className="border-t border-slate-200 bg-white px-5 py-3 md:hidden sm:px-8"
           >
             <div className="mx-auto grid max-w-7xl grid-cols-2 gap-1">
               {navigation.map((item) => (
