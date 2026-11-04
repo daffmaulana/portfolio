@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+html.classic-page {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.classic-page {
+    scroll-behavior: auto;
+  }
+}
+
+html.game-page,
+body.game-page {
+  scrollbar-color: #b88746 #171717;
+  scrollbar-width: thin;
+}
+
+html.game-page,
+html.game-page body,
+html.game-page body *,
+html.game-page body *::before,
+html.game-page body *::after {
+  cursor: url("/cursors/pixel-arrow.svg") 4 3, auto !important;
+}
+
+html.game-page button,
+html.game-page a,
+html.game-page [role="button"],
+html.game-page button *,
+html.game-page a *,
+html.game-page [role="button"] * {
+  cursor: url("/cursors/pixel-hand.svg") 12 4, pointer !important;
+}
+
+html.game-page input,
+html.game-page textarea,
+html.game-page [contenteditable="true"] {
+  cursor: text !important;
+}
+
+html.game-page::-webkit-scrollbar,
+html.game-page body::-webkit-scrollbar,
+html.game-page body *::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+html.game-page::-webkit-scrollbar-track,
+html.game-page body::-webkit-scrollbar-track,
+html.game-page body *::-webkit-scrollbar-track {
+  border: 2px solid #171717;
+  border-radius: 9999px;
+  background: #29231d;
+}
+
+html.game-page::-webkit-scrollbar-thumb,
+html.game-page body::-webkit-scrollbar-thumb,
+html.game-page body *::-webkit-scrollbar-thumb {
+  border: 2px solid #171717;
+  border-radius: 9999px;
+  background: #b88746;
+}
+
+html.game-page::-webkit-scrollbar-thumb:hover,
+html.game-page body::-webkit-scrollbar-thumb:hover,
+html.game-page body *::-webkit-scrollbar-thumb:hover {
+  background: #d3a75f;
+}
