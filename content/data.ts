@@ -28,7 +28,7 @@ export const intro: Intro = {
     "This line runs from my story to my projects, with stops at my experience and skills along the way. Take your time, or hop between stops with the bar below.",
   ],
   // Hapus tanda // di bawah kalau mau menampilkan status (dan perbarui secara berkala)
-  status: "Open for Work: Dev / Data / and Machine Learning Opportunities!",
+  status: "Open to Work: Dev / Data / and Machine Learning Opportunities!",
 };
 
 export const about: About = {
