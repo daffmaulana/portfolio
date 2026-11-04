@@ -41,7 +41,7 @@ export const about: About = {
     { label: "Gaming", note:"Roblox Maniac" },
   ],
   gallery: [
-    { src: "/photos/campus-1.JPG", alt: "Graduation", caption: "Graduation" },
+    { src: "/photos/campus-1.jpg", alt: "Graduation", caption: "Graduation" },
     { src: "/photos/campus-2.jpg", alt: "Campus Event w/ Friends", caption: "Campus Event w/ Friends" },
     { src: "/photos/campus-3.jpeg", alt: "Bimbingan Skripsi", caption: "Bimbingan Skripsi" },
   ],
