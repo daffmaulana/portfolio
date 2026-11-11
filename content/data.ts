@@ -65,12 +65,62 @@ export const education: Education[] = [
 
 export const certifications: Certification[] = [
   {
+    id: "cert-5",
+    title: "Data Analyst Track Course",
+    issuer: "Datacamp",
+    issued: "Nov 2026", //completed, theres no expired
+    activityDate: "Nov 2026", 
+    location: "Online",
+    url: "https://www.linkedin.com/posts/daffamaulana_dataanalyst-datacamp-sql-ugcPost-7525378315126300672-nZQ_/",
+    tags: ["data"],
+    photos: [
+      {
+        src: "/photos/datacamp/dc-1.png",
+        alt: "Completed Course",
+        caption: "Completed Course",
+      },]
+  },
+  {
+    id: "cert-4",
+    title: "SQL Associate",
+    issuer: "DataCamp",
+    issued: "Nov 2026",
+    expires: "Nov 2028",
+    activityDate: "Nov 2026",
+    location: "Online",
+    url: "https://www.datacamp.com/certificate/SQA0019189145328",
+    tags: ["data"],
+    photos: [
+      {
+        src: "/photos/datacamp/sql-associate.png",
+        alt: "Certificate Completion",
+        caption: "Certificate Completion",
+      },]
+  },
+  {
+    id: "cert-3",
+    title: "Data Analytics Associate",
+    issuer: "DataCamp",
+    issued: "Nov 2026",
+    expires: "Nov 2028",
+    activityDate: "Nov 2026",
+    location: "Online",
+    url: "https://www.datacamp.com/certificate/DAA0012875092122",
+    tags: ["data"],
+    photos: [
+      {
+        src: "/photos/datacamp/da-associate.png",
+        alt: "Certificate Completion",
+        caption: "Certificate Completion",
+      },]
+  },
+  {
     id: "cert-1",
     title: "Data Analytics",
     issuer: "Pearson",
     issued: "Oct 2025",
     expires: "Oct 2030",
-    activityDate: "Oct 2025",
+    activityDate: "Oct 2025", 
     location: "Universitas Pembangunan Nasional 'Veteran' Jakarta",
     url: "https://www.credly.com/badges/7b989dc3-8e64-4cc5-a1e3-02d1b822d46c/public_url",
     tags: ["data"],
@@ -85,8 +135,7 @@ export const certifications: Certification[] = [
     id: "cert-2",
     title: "AI Engineer Intensive Course",
     issuer: "Pijak Dicoding x IBM SkillsBuild",
-    issued: "Jul 2026",
-    expires: "Jul 2031",
+    issued: "Jul 2026", //completed, theres no expired
     activityDate: "Jan - Jul 2026",
     location: "Online Learning/ Offline Graduation",
     url: "https://drive.google.com/file/d/1DO_YCKNTsydOAlfsrTskbKHQoaVogR0H/view?usp=sharing",
